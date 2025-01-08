@@ -4,7 +4,66 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:model="using:IDM_Clone.Models"
+    xmlns:local="using:IDM_Clone.Views"
+    xmlns:ViewModels="using:IDM_Clone.ViewModels"
     mc:Ignorable="d">
+
+    <!-- Page Resources -->
+
+    <Page.Resources>
+        <DataTemplate x:Key="DownloadItemTemplate" x:DataType="model:DownloadItem">
+            <Border Width="760" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <Grid Padding="24" ColumnSpacing="32">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <FontIcon Glyph="&#xE8A5;" FontSize="32" Grid.Column="0" />
+                    <StackPanel Grid.Column="1" Spacing="16">
+                        <TextBlock 
+                            TextWrapping="Wrap" 
+                            IsTextSelectionEnabled="True"
+                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                            Text="{x:Bind Name}" 
+                            HorizontalAlignment="Stretch" />
+                        <TextBlock
+                            Margin="0 0 0 8"
+                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                            TextWrapping="Wrap"
+                            Text="{x:Bind Status, Mode=OneWay}"
+                            Name="DownloadStatus" />
+                        <ProgressBar Value="{x:Bind Progress, Mode=OneWay}" Name="ProgressBar" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                        <Button Name="ShowInFolder" Click="ShowInFolder_Click">
+                            <Button.Content>
+                                <FontIcon Glyph="&#xF12B;" FontSize="16" />
+                            </Button.Content>
+                        </Button>
+                        <Button Name="CopyURL" Click="CopyURL_Click">
+                            <Button.Content>
+                                <FontIcon Glyph="&#xE71B;" FontSize="16" />
+                            </Button.Content>
+                        </Button>
+                        <Button>
+                            <Button.Content>
+                                <FontIcon Glyph="&#xE712;" FontSize="16" />
+                            </Button.Content>
+                            <Button.Flyout>
+                                <MenuFlyout>
+                                    <MenuFlyoutItem Text="Tạm dừng" />
+                                    <MenuFlyoutItem Text="Hủy bỏ" />
+                                </MenuFlyout>
+                            </Button.Flyout>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </Page.Resources>
 
     <StackPanel Orientation="Vertical" MaxWidth="768" Spacing="8">
         <Grid ColumnSpacing="8" Margin="0 0 0 40">
@@ -16,89 +75,22 @@
             <Button Content="Tải xuống" Grid.Column="1" Name="Download" Click="Download_Click"/>
         </Grid>
 
-        <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
-            <Grid Padding="24" ColumnSpacing="32">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <FontIcon Glyph="&#xE8A5;" FontSize="32" Grid.Column="0" />
-                <StackPanel Grid.Column="1" Spacing="32">
-                    <TextBlock 
-                        TextWrapping="Wrap" 
-                        IsTextSelectionEnabled="True"
-                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                        Text="https://suckhoedoisong.qltns.mediacdn.vn/324455921873985536/2022/2/19/cach-lam-nuoc-cam-ep-ngon-va-thom-ket-hop-voi-le-va-gung-5-1645248090817401855254.jpg" 
-                        HorizontalAlignment="Stretch" />
-                    <TextBlock
-                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                        TextWrapping="Wrap"
-                        Text="3,2 MB/s - 87,2 MB của 1,1 GB, còn 6 phút"
-                        Name="DownloadStatus" />
-                    <ProgressBar Value="50" Name="ProgressBar" />
-                </StackPanel>
-                
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
-                    <Button>
-                        <Button.Content>
-                            <FontIcon Glyph="&#xE71B;" FontSize="16" />
-                        </Button.Content>
-                    </Button>
-                    <Button>
-                        <Button.Content>
-                            <FontIcon Glyph="&#xE712;" FontSize="16" />
-                        </Button.Content>
-                        <Button.Flyout>
-                            <MenuFlyout>
-                                <MenuFlyoutItem Text="Tạm dừng" />
-                                <MenuFlyoutItem Text="Hủy bỏ" />
-                            </MenuFlyout>
-                        </Button.Flyout>
-                    </Button>
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
-            <Grid Padding="24" ColumnSpacing="32">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <FontIcon Glyph="&#xE8A5;" FontSize="32" Grid.Column="0" />
-                <TextBlock 
-                    TextWrapping="Wrap" 
-                    IsTextSelectionEnabled="True"
-                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                    Text="https://suckhoedoisong.qltns.mediacdn.vn/324455921873985536/2022/2/19/cach-lam-nuoc-cam-ep-ngon-va-thom-ket-hop-voi-le-va-gung-5-1645248090817401855254.jpg" 
-                    HorizontalAlignment="Stretch" 
-                    Grid.Column="1" />
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
-                    <Button>
-                        <Button.Content>
-                            <FontIcon Glyph="&#xF12B;" FontSize="16" />
-                        </Button.Content>
-                    </Button>
-                    <Button>
-                        <Button.Content>
-                            <FontIcon Glyph="&#xE71B;" FontSize="16" />
-                        </Button.Content>
-                    </Button>
-                    <Button>
-                        <Button.Content>
-                            <FontIcon Glyph="&#xE712;" FontSize="16" />
-                        </Button.Content>
-                        <Button.Flyout>
-                            <MenuFlyout>
-                                <MenuFlyoutItem Text="Tạm dừng" />
-                                <MenuFlyoutItem Text="Hủy bỏ" />
-                            </MenuFlyout>
-                        </Button.Flyout>
-                    </Button>
-                </StackPanel>
-            </Grid>
-        </Border>
+        <!-- Download List -->
+        <GridView ItemsSource="{x:Bind ViewModel.Downloads, Mode=TwoWay}" ItemTemplate="{StaticResource DownloadItemTemplate}">
+            <GridView.ItemContainerStyle>
+                <Style TargetType="GridViewItem">
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="BorderBrush" Value="Transparent"/>
+                    <Setter Property="Margin" Value="4"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="GridViewItem">
+                                <ContentPresenter/>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </GridView.ItemContainerStyle>
+        </GridView>
     </StackPanel>
 </Page>

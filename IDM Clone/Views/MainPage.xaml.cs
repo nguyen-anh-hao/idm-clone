@@ -1,4 +1,5 @@
-﻿using IDM_Clone.Models;
+﻿using System.Net.WebSockets;
+using IDM_Clone.Models;
 using IDM_Clone.ViewModels;
 
 using Microsoft.UI.Xaml.Controls;
@@ -17,61 +18,39 @@ public sealed partial class MainPage : Page
     {
         ViewModel = App.GetService<MainViewModel>();
         InitializeComponent();
+        DataContext = ViewModel; // Set the DataContext for data binding
     }
 
-    private string convertBytesToMegabytes(long bytes)
+    private async void Download_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
-        return (bytes / 1024f / 1024f).ToString("0.00");
+        // Choose a folder to save the file
+        var picker = new Windows.Storage.Pickers.FolderPicker();
+        picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.Desktop;
+        picker.FileTypeFilter.Add("*");
+
+        // Thiết lập cho WinUI
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+        Windows.Storage.StorageFolder folder = await picker.PickSingleFolderAsync();
+        ViewModel.addDownloadItem(URL.Text, folder.Path);
+
+        // Xóa text ở TextBox
+        URL.Text = "";
     }
 
-    private string flexibleTime(TimeSpan time)
+    private void ShowInFolder_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
-        if (time.Hours > 0)
-        {
-            return $"{time.Hours} giờ {time.Minutes} phút";
-        }
-        else if (time.Minutes > 0)
-        {
-            return $"{time.Minutes} phút";
-        }
-        else
-        {
-            return $"{time.Seconds} giây";
-        }
+        // Show In Folder
+        var button = (Button)sender;
+        var item = (DownloadItem)button.DataContext;
+        item.ShowInFolder();
     }
 
-    private string flexibleSize(long size)
+    private void CopyURL_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
-        if (size > 1024 * 1024 * 1024)
-        {
-            return $"{(size / 1024f / 1024f).ToString("0.00")} MB";
-        }
-        else if (size > 1024 * 1024)
-        {
-            return $"{(size / 1024f).ToString("0.00")} KB";
-        }
-        else
-        {
-            return $"{size} B";
-        }
-    }
-
-    private void Download_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-    {
-        var progress = new Progress<DownloadStatus>(status =>
-        {
-            // 3,2 MB/s - 87,2 MB của 1,1 GB, còn 6 phút
-            if (status.Status == "Downloading")
-            {
-                DownloadStatus.Text = $"{status.DownloadSpeed.ToString("0.0")} MB/s - {flexibleSize(status.DownloadedSize)} MB của {convertBytesToMegabytes(status.TotalFileSize)} MB, còn {flexibleTime(status.RemainingTime)}";
-                ProgressBar.Value = status.Progress;
-            }
-            else
-            {
-                DownloadStatus.Text = $"{status.DownloadSpeed.ToString("0.0")} MB/s - {flexibleSize(status.DownloadedSize)} MB của {convertBytesToMegabytes(status.TotalFileSize)} MB, còn {flexibleTime(status.RemainingTime)}";
-                ProgressBar.Value = status.Progress;
-            }
-        });
-        ViewModel.DownloadFileAsync(URL.Text, "D:\\test\\", 4, progress);
+        // Copy URL
+        var button = (Button)sender;
+        var item = (DownloadItem)button.DataContext;
+        item.CopyURL();
     }
 }

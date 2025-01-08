@@ -2,126 +2,156 @@
 using CommunityToolkit.Mvvm.Input;
 using IDM_Clone.Models;
 using System;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-
-namespace IDM_Clone.ViewModels;
-
-public partial class MainViewModel : ObservableRecipient
+namespace IDM_Clone.ViewModels
 {
-    private readonly HttpClient _httpClient = new HttpClient();
-
-    //public RelayCommand DownloadCommand
-    //{
-    //    get;
-    //}
-
-    public async Task DownloadFileAsync(string url, string outputPath, int numberOfThreads, IProgress<DownloadStatus> progress)
+    public partial class MainViewModel : ObservableRecipient
     {
-        // Lấy tên file
-        string fileName = Path.GetFileName(new Uri(url).AbsolutePath);
-        outputPath = Path.Combine(outputPath, fileName);
-
-        long downloadedSize = 0;
-        DateTime startTime = DateTime.Now;
-
-        // Lấy kích thước file
-        var response = await _httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, url));
-        var fileSize = response.Content.Headers.ContentLength ?? throw new Exception("Không lấy được kích thước file.");
-
-        // Chia đoạn tải
-        long partSize = fileSize / numberOfThreads;
-        var tasks = new Task[numberOfThreads];
-        var semaphore = new SemaphoreSlim(1, 1);
-
-        for (int i = 0; i < numberOfThreads; i++)
+        private string FlexibleTime(TimeSpan time)
         {
-            long start = i * partSize;
-            long end = (i == numberOfThreads - 1) ? fileSize - 1 : start + partSize - 1;
+            if (time.Hours > 0)
+                return $"{time.Hours} giờ {time.Minutes} phút";
+            else if (time.Minutes > 0)
+                return $"{time.Minutes} phút";
+            return $"{time.Seconds} giây";
+        }
 
-            tasks[i] = Task.Run(async () =>
+        private string FlexibleSize(double size)
+        {
+            if (size >= 1024 * 1024)
+                return $"{(size / 1024f / 1024f):0.00} MB";
+            else if (size >= 1024)
+                return $"{(size / 1024f):0.00} KB";
+            return $"{size} B";
+        }
+
+        private string FlexibleTime(double timeInSeconds)
+        {
+            TimeSpan time = TimeSpan.FromSeconds(timeInSeconds);
+            return FlexibleTime(time);
+        }
+
+        private readonly HttpClient _httpClient = new HttpClient();
+
+        public async Task DownloadFileAsync(string url, string outputPath, int numberOfThreads, IProgress<DownloadStatus> progress)
+        {
+            // Lấy tên file và kích thước
+            string fileName = Path.GetFileName(new Uri(url).AbsolutePath);
+            outputPath = Path.Combine(outputPath, fileName);
+
+            var response = await _httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, url));
+            long fileSize = response.Content.Headers.ContentLength ?? throw new Exception("Không lấy được kích thước file.");
+
+            long downloadedSize = 0;
+            long partSize = fileSize / numberOfThreads;
+            var tasks = new List<Task>();
+            var semaphore = new SemaphoreSlim(1, 1);
+            var stopwatch = Stopwatch.StartNew();
+
+            // Tải từng phần
+            for (int i = 0; i < numberOfThreads; i++)
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, url);
-                request.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(start, end);
+                long start = i * partSize;
+                long end = (i == numberOfThreads - 1) ? fileSize - 1 : start + partSize - 1;
 
-                using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-                var data = await response.Content.ReadAsByteArrayAsync();
-
-                // Ghi vào file
-                await semaphore.WaitAsync();
-                try
+                tasks.Add(Task.Run(async () =>
                 {
-                    using var fs = new FileStream(outputPath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Write);
-                    fs.Seek(start, SeekOrigin.Begin);
-                    fs.Write(data, 0, data.Length);
+                    var request = new HttpRequestMessage(HttpMethod.Get, url);
+                    request.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(start, end);
 
-                    // Cập nhật tải về
-                    Interlocked.Add(ref downloadedSize, data.Length);
-                }
-                finally
+                    using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+                    if (!response.IsSuccessStatusCode)
+                        throw new Exception($"Lỗi tải phần {i + 1}: {response.StatusCode}");
+
+                    var data = await response.Content.ReadAsByteArrayAsync();
+
+                    await semaphore.WaitAsync();
+                    try
+                    {
+                        using var fs = new FileStream(outputPath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Write);
+                        fs.Seek(start, SeekOrigin.Begin);
+                        fs.Write(data, 0, data.Length);
+                        Interlocked.Add(ref downloadedSize, data.Length);
+                    }
+                    finally
+                    {
+                        semaphore.Release();
+                    }
+                }));
+            }
+
+            // Task báo cáo tiến độ
+            var reportTask = Task.Run(async () =>
+            {
+                while (true)
                 {
-                    semaphore.Release();
+                    await Task.Delay(200);
+                    double elapsedTimeInSeconds = stopwatch.Elapsed.TotalSeconds;
+                    double speed = elapsedTimeInSeconds > 0 ? downloadedSize / elapsedTimeInSeconds : 0;
+
+                    progress.Report(new DownloadStatus
+                    {
+                        TotalFileSize = fileSize,
+                        DownloadedSize = downloadedSize,
+                        DownloadSpeed = speed / (1024 * 1024), // Tính MB/s
+                        RemainingTime = speed > 0 ? TimeSpan.FromSeconds((fileSize - downloadedSize) / speed) : TimeSpan.MaxValue,
+                        Progress = (double)downloadedSize / fileSize * 100,
+                        //Status = downloadedSize < fileSize ? "3.2 MB/s - 87.2 MB của 1.1 GB, còn 6 phút" : "Đã tải xong"
+                        Status = downloadedSize < fileSize ? $"{FlexibleSize(speed)}/s - {FlexibleSize(downloadedSize)} của {FlexibleSize(fileSize)}, còn {FlexibleTime(elapsedTimeInSeconds)}" : "Đã tải xong",
+                    });
+
+                    if (downloadedSize >= fileSize)
+                        break;
                 }
+            });
+
+            // Chờ tất cả hoàn thành
+            await Task.WhenAll(tasks);
+            stopwatch.Stop();
+            await reportTask;
+
+            // Báo cáo hoàn tất
+            progress.Report(new DownloadStatus
+            {
+                TotalFileSize = fileSize,
+                DownloadedSize = fileSize,
+                DownloadSpeed = 0,
+                RemainingTime = TimeSpan.Zero,
+                Progress = 100,
+                Status = "Đã tải xong"
             });
         }
 
-        // Chạy một task riêng biệt để báo cáo mỗi giây
-        var reportTask = Task.Run(async () =>
+        ObservableCollection<DownloadItem> _downloads = new ObservableCollection<DownloadItem>();
+        public ObservableCollection<DownloadItem> Downloads
         {
-            while (true)
+            get => _downloads;
+            set => SetProperty(ref _downloads, value);
+        }
+
+        public void addDownloadItem(string url, string outputPath)
+        {
+            var newDownloadItem = new DownloadItem(url, outputPath);
+            Downloads.Add(newDownloadItem);
+            OnPropertyChanged(nameof(Downloads));
+
+            var progress = new Progress<DownloadStatus>(status =>
             {
-                await Task.Delay(1000); // Chờ 1 giây
-                TimeSpan elapsedTime = DateTime.Now - startTime;
-                double speed = downloadedSize / elapsedTime.TotalSeconds;
+                newDownloadItem.Status = status.Status;
+                newDownloadItem.Progress = status.Progress;
+            });
 
-                // Báo cáo tiến độ
-                progress.Report(new DownloadStatus
-                {
-                    TotalFileSize = fileSize,
-                    DownloadedSize = downloadedSize,
-                    DownloadSpeed = speed,
-                    RemainingTime = TimeSpan.FromSeconds((fileSize - downloadedSize) / speed),
-                    Progress = (double)downloadedSize / fileSize * 100,
-                    Status = downloadedSize < fileSize ? "Downloading" : "Downloaded"
-                });
+            _ = DownloadFileAsync(url, outputPath, 4, progress);
+        }
 
-                // Kiểm tra xem tải xong chưa
-                if (downloadedSize >= fileSize)
-                    break;
-            }
-        });
-
-        // Đợi tất cả các task hoàn thành
-        await Task.WhenAll(tasks);
-
-        // Chờ task báo cáo tiến độ kết thúc
-        await reportTask;
-
-        // Báo cáo khi tải xong
-        progress.Report(new DownloadStatus
+        public MainViewModel()
         {
-            TotalFileSize = fileSize,
-            DownloadedSize = fileSize,
-            DownloadSpeed = 0,
-            RemainingTime = TimeSpan.FromSeconds(0),
-            Progress = 100,
-            Status = "Downloaded"
-        });
-    }
-
-    public MainViewModel()
-    {
-        //DownloadCommand = new RelayCommand(async () =>
-        //{
-        //    var progress = new Progress<DownloadStatus>(status =>
-        //    {
-        //        Console.WriteLine($"Downloaded: {status.DownloadedSize}/{status.TotalFileSize} ({status.Progress:P1}) - Speed: {status.DownloadSpeed / 1024 / 1024:F2} MB/s - Remaining: {status.RemainingTime}");
-        //    });
-
-        //    await DownloadFileAsync("https://png.pngtree.com/thumb_back/fh260/background/20230511/pngtree-nature-background-sunset-wallpaer-with-beautiful-flower-farms-image_2592160.jpg", "D:\\test\\", 4, progress);
-        //});
+        }
     }
 }
