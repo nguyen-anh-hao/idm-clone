@@ -1,0 +1,104 @@
+﻿<Page
+    x:Class="IDM_Clone.Views.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <StackPanel Orientation="Vertical" MaxWidth="768" Spacing="8">
+        <Grid ColumnSpacing="8" Margin="0 0 0 40">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox PlaceholderText="Nhập URL" Grid.Column="0" Name="URL" />
+            <Button Content="Tải xuống" Grid.Column="1" Name="Download" Click="Download_Click"/>
+        </Grid>
+
+        <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+            <Grid Padding="24" ColumnSpacing="32">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <FontIcon Glyph="&#xE8A5;" FontSize="32" Grid.Column="0" />
+                <StackPanel Grid.Column="1" Spacing="32">
+                    <TextBlock 
+                        TextWrapping="Wrap" 
+                        IsTextSelectionEnabled="True"
+                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                        Text="https://suckhoedoisong.qltns.mediacdn.vn/324455921873985536/2022/2/19/cach-lam-nuoc-cam-ep-ngon-va-thom-ket-hop-voi-le-va-gung-5-1645248090817401855254.jpg" 
+                        HorizontalAlignment="Stretch" />
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                        TextWrapping="Wrap"
+                        Text="3,2 MB/s - 87,2 MB của 1,1 GB, còn 6 phút"
+                        Name="DownloadStatus" />
+                    <ProgressBar Value="50" Name="ProgressBar" />
+                </StackPanel>
+                
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                    <Button>
+                        <Button.Content>
+                            <FontIcon Glyph="&#xE71B;" FontSize="16" />
+                        </Button.Content>
+                    </Button>
+                    <Button>
+                        <Button.Content>
+                            <FontIcon Glyph="&#xE712;" FontSize="16" />
+                        </Button.Content>
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem Text="Tạm dừng" />
+                                <MenuFlyoutItem Text="Hủy bỏ" />
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+            <Grid Padding="24" ColumnSpacing="32">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <FontIcon Glyph="&#xE8A5;" FontSize="32" Grid.Column="0" />
+                <TextBlock 
+                    TextWrapping="Wrap" 
+                    IsTextSelectionEnabled="True"
+                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                    Text="https://suckhoedoisong.qltns.mediacdn.vn/324455921873985536/2022/2/19/cach-lam-nuoc-cam-ep-ngon-va-thom-ket-hop-voi-le-va-gung-5-1645248090817401855254.jpg" 
+                    HorizontalAlignment="Stretch" 
+                    Grid.Column="1" />
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                    <Button>
+                        <Button.Content>
+                            <FontIcon Glyph="&#xF12B;" FontSize="16" />
+                        </Button.Content>
+                    </Button>
+                    <Button>
+                        <Button.Content>
+                            <FontIcon Glyph="&#xE71B;" FontSize="16" />
+                        </Button.Content>
+                    </Button>
+                    <Button>
+                        <Button.Content>
+                            <FontIcon Glyph="&#xE712;" FontSize="16" />
+                        </Button.Content>
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem Text="Tạm dừng" />
+                                <MenuFlyoutItem Text="Hủy bỏ" />
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </StackPanel>
+</Page>

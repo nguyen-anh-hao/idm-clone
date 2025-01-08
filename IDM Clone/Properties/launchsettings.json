@@ -1,0 +1,10 @@
+﻿{
+    "profiles": {
+      "IDM Clone (Package)": {
+        "commandName": "MsixPackage"
+      },
+      "IDM Clone (Unpackaged)": {
+        "commandName": "Project"
+      }
+    }
+}
