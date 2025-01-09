@@ -85,16 +85,11 @@
         <GridView ItemsSource="{x:Bind ViewModel.Downloads, Mode=TwoWay}" ItemTemplate="{StaticResource DownloadItemTemplate}">
             <GridView.ItemContainerStyle>
                 <Style TargetType="GridViewItem">
-                    <Setter Property="BorderThickness" Value="0"/>
-                    <Setter Property="BorderBrush" Value="Transparent"/>
-                    <Setter Property="Margin" Value="4"/>
-                    <Setter Property="Template">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+                    
                         <Setter.Value>
                             <ControlTemplate TargetType="GridViewItem">
-                                <ContentPresenter/>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
                 </Style>
             </GridView.ItemContainerStyle>
         </GridView>
