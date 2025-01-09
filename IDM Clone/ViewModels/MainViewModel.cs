@@ -50,15 +50,18 @@ namespace IDM_Clone.ViewModels
 
             long downloadedSize = 0;
             long partSize = fileSize / numberOfThreads;
+            long[] dowloadedPartSize = new long[numberOfThreads];
+
             var tasks = new List<Task>();
-            var semaphore = new SemaphoreSlim(1, 1);
+            var semaphore = new SemaphoreSlim(numberOfThreads, numberOfThreads);
             var stopwatch = Stopwatch.StartNew();
 
             // Tải từng phần
             for (int i = 0; i < numberOfThreads; i++)
             {
-                long start = i * partSize;
-                long end = (i == numberOfThreads - 1) ? fileSize - 1 : start + partSize - 1;
+                int threadIndex = i; // Biến cục bộ lưu giá trị hiện tại của i
+                long start = threadIndex * partSize;
+                long end = (threadIndex == numberOfThreads - 1) ? fileSize - 1 : start + partSize - 1;
 
                 tasks.Add(Task.Run(async () =>
                 {
@@ -67,17 +70,23 @@ namespace IDM_Clone.ViewModels
 
                     using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
                     if (!response.IsSuccessStatusCode)
-                        throw new Exception($"Lỗi tải phần {i + 1}: {response.StatusCode}");
-
-                    var data = await response.Content.ReadAsByteArrayAsync();
+                        throw new Exception($"Lỗi tải phần {threadIndex + 1}: {response.StatusCode}");
 
                     await semaphore.WaitAsync();
                     try
                     {
                         using var fs = new FileStream(outputPath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Write);
                         fs.Seek(start, SeekOrigin.Begin);
-                        fs.Write(data, 0, data.Length);
-                        Interlocked.Add(ref downloadedSize, data.Length);
+
+                        using var stream = await response.Content.ReadAsStreamAsync();
+                        var buffer = new byte[8192]; // Kích thước buffer tùy chỉnh
+                        int bytesRead;
+                        while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                        {
+                            fs.Write(buffer, 0, bytesRead);
+                            Interlocked.Add(ref downloadedSize, bytesRead); // Cập nhật downloadedSize ngay lập tức
+                            Interlocked.Add(ref dowloadedPartSize[threadIndex], bytesRead); // Cập nhật downloadedSize của phần
+                        }
                     }
                     finally
                     {
@@ -85,6 +94,7 @@ namespace IDM_Clone.ViewModels
                     }
                 }));
             }
+
 
             // Task báo cáo tiến độ
             var reportTask = Task.Run(async () =>
@@ -102,8 +112,8 @@ namespace IDM_Clone.ViewModels
                         DownloadSpeed = speed / (1024 * 1024), // Tính MB/s
                         RemainingTime = speed > 0 ? TimeSpan.FromSeconds((fileSize - downloadedSize) / speed) : TimeSpan.MaxValue,
                         Progress = (double)downloadedSize / fileSize * 100,
-                        //Status = downloadedSize < fileSize ? "3.2 MB/s - 87.2 MB của 1.1 GB, còn 6 phút" : "Đã tải xong"
                         Status = downloadedSize < fileSize ? $"{FlexibleSize(speed)}/s - {FlexibleSize(downloadedSize)} của {FlexibleSize(fileSize)}, còn {FlexibleTime(elapsedTimeInSeconds)}" : "Đã tải xong",
+                        DownloadedPartSize = $"[ {string.Join(" ] [ ", dowloadedPartSize.Select(size => FlexibleSize(size)))} ]"
                     });
 
                     if (downloadedSize >= fileSize)
@@ -145,6 +155,7 @@ namespace IDM_Clone.ViewModels
             {
                 newDownloadItem.Status = status.Status;
                 newDownloadItem.Progress = status.Progress;
+                newDownloadItem.DownloadedPartSize = status.DownloadedPartSize;
             });
 
             _ = DownloadFileAsync(url, outputPath, 4, progress);
@@ -155,3 +166,5 @@ namespace IDM_Clone.ViewModels
         }
     }
 }
+
+// Còn tạm dừng, hủy bỏ, responsive

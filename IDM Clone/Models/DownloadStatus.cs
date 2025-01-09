@@ -31,6 +31,10 @@ public class DownloadStatus
     {
         get; set;
     }
+    public string DownloadedPartSize
+    {
+        get; set;
+    }
     public DownloadStatus()
     {
         TotalFileSize = 0;
@@ -38,6 +42,7 @@ public class DownloadStatus
         DownloadSpeed = 0;
         RemainingTime = TimeSpan.Zero;
         Progress = 0;
-        Status = "Idle";
+        Status = "";
+        DownloadedPartSize = "";
     }
 }

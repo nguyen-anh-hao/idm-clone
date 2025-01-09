@@ -8,6 +8,7 @@ namespace IDM_Clone.Models
     {
         private string _status;
         private double _progress;
+        private string _downloadedPartSize;
 
         public string Url
         {
@@ -47,6 +48,19 @@ namespace IDM_Clone.Models
             }
         }
 
+        public string DownloadedPartSize
+        {
+            get => _downloadedPartSize;
+            set
+            {
+                if (_downloadedPartSize != value)
+                {
+                    _downloadedPartSize = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         public bool IsVisibilityProgress => this.Progress < 100;
 
         public Progress<DownloadStatus> DownloadProgress
@@ -58,7 +72,8 @@ namespace IDM_Clone.Models
         {
             Url = url;
             OutputPath = outputPath;
-            _status = "Idle";
+            _status = "Bắt đầu tải xuống";
+            _downloadedPartSize = "[ ]";
             _progress = 0;
             DownloadProgress = new Progress<DownloadStatus>();
         }

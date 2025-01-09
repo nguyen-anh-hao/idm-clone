@@ -13,7 +13,7 @@
 
     <Page.Resources>
         <DataTemplate x:Key="DownloadItemTemplate" x:DataType="model:DownloadItem">
-            <Border Width="760" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+            <Border Width="760" Height="Auto" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
                 <Grid Padding="24" ColumnSpacing="32">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -34,6 +34,12 @@
                             TextWrapping="Wrap"
                             Text="{x:Bind Status, Mode=OneWay}"
                             Name="DownloadStatus" />
+                        <TextBlock
+                            Margin="0 0 0 8"
+                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                            TextWrapping="Wrap"
+                            Text="{x:Bind DownloadedPartSize, Mode=OneWay}"
+                            Name="DownloadedPartSize" />
                         <ProgressBar Value="{x:Bind Progress, Mode=OneWay}" Name="ProgressBar" />
                     </StackPanel>
 
